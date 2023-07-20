@@ -20,7 +20,7 @@ npm install exchange-rates
 
     - <i>Default value is USD.</i>
 
-> <i>\* Valid currencies can be found here.</i>
+> <i>\* Valid currencies can be found <a href="https://github.com/fdfgomes/node-exchange-rates/blob/main/src/types/Currency.ts">here</a>.</i>
 
 #### Valid usage examples:
 
@@ -98,7 +98,7 @@ example();
   - `fromValue` - value to be converted;
   - `toCurrency` - valid currency.
 
-> <i>\* Valid currencies can be found here.</i>
+> <i>\* Valid currencies can be found <a href="https://github.com/fdfgomes/node-exchange-rates/blob/main/src/types/Currency.ts">here</a>.</i>
 
 #### Valid usage example:
 
