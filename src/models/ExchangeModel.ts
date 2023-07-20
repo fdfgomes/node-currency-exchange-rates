@@ -1,3 +1,4 @@
+import { TEMP_DATA_DIR } from '../constants';
 import { IExchangeModel } from '../interfaces';
 import { Currency, CurrencyRates } from '../types';
 import fs from 'fs';
@@ -8,7 +9,7 @@ class ExchangeModel implements IExchangeModel {
 
     return new Promise<CurrencyRates>((resolve, reject) => {
       fs.writeFile(
-        `./src/data/${baseCurrency}.json`,
+        `${TEMP_DATA_DIR}/${baseCurrency}.json`,
         JSON.stringify(data),
         (err) => {
           if (err) throw reject(err);
@@ -29,7 +30,7 @@ class ExchangeModel implements IExchangeModel {
     // quotations are valid for 1 hour
     // after that must refetch rates and update local data
     return new Promise<CurrencyRates>((resolve, reject) => {
-      fs.readFile(`./src/data/${baseCurrency}.json`, (err, data) => {
+      fs.readFile(`${TEMP_DATA_DIR}/${baseCurrency}.json`, (err, data) => {
         if (err) reject(err);
         resolve(data ? JSON.parse(data.toString()) : null);
       });

@@ -12,13 +12,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const constants_1 = require("../constants");
 const fs_1 = __importDefault(require("fs"));
 class ExchangeModel {
     create(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const { baseCurrency } = data;
             return new Promise((resolve, reject) => {
-                fs_1.default.writeFile(`./src/data/${baseCurrency}.json`, JSON.stringify(data), (err) => {
+                fs_1.default.writeFile(`${constants_1.TEMP_DATA_DIR}/${baseCurrency}.json`, JSON.stringify(data), (err) => {
                     if (err)
                         throw reject(err);
                     resolve(data);
@@ -36,14 +37,14 @@ class ExchangeModel {
             // quotations are valid for 1 hour
             // after that must refetch rates and update local data
             return new Promise((resolve, reject) => {
-                fs_1.default.readFile(`./src/data/${baseCurrency}.json`, (err, data) => {
+                fs_1.default.readFile(`${constants_1.TEMP_DATA_DIR}/${baseCurrency}.json`, (err, data) => {
                     if (err)
                         reject(err);
                     resolve(data ? JSON.parse(data.toString()) : null);
                 });
             })
                 .then((result) => {
-                // validate if local quotations exists and, if so, that they are still valid
+                // validate if local quotations exists and, if so, if they are still valid
                 const today = new Date();
                 const resultDate = new Date(result.date);
                 const resultDay = resultDate.getDate();

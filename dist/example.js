@@ -14,8 +14,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = __importDefault(require("./index"));
 const example = () => __awaiter(void 0, void 0, void 0, function* () {
-    const rates = yield index_1.default.getRates('JPY');
-    const conversion = yield index_1.default.convert('USD', 100, 'PHP');
+    const rates = yield index_1.default.getRates('USD');
+    const conversion = yield index_1.default.convert('USD', 100, 'EUR');
     console.log(rates);
     console.log(conversion);
 });
