@@ -1,11 +1,11 @@
-# node-exchange-rates
+# node-currency-exchange-rates
 
 Open-source project designed to provide exchange rates and offer a simple currency conversion experience.
 
 # Installation
 
 ```js
-npm install exchange-rates
+npm install node-currency-exchange-rates
 ```
 
 # Methods
@@ -20,14 +20,14 @@ npm install exchange-rates
 
     - <i>Default value is USD.</i>
 
-> <i>\* Valid currencies can be found <a href="https://github.com/fdfgomes/node-exchange-rates/blob/main/src/types/Currency.ts">here</a>.</i>
+> <i>\* Valid currencies can be found <a href="https://github.com/fdfgomes/node-currency-exchange-rates/blob/main/src/types/Currency.ts">here</a>.</i>
 
 #### Valid usage examples:
 
 #### **Without** `baseCurrency` optional parameter:
 
 ```js
-import exchange from 'exchange-rates';
+import exchange from 'node-currency-exchange-rates';
 
 const example = async () => {
   const rates = await exchange.getRates();
@@ -40,7 +40,7 @@ example();
 #### **With** `baseCurrency` optional parameter:
 
 ```js
-import exchange from 'exchange-rates';
+import exchange from 'node-currency-exchange-rates';
 
 const example = async () => {
   const rates = await exchange.getRates('USD');
@@ -98,12 +98,12 @@ example();
   - `fromValue` - value to be converted;
   - `toCurrency` - valid currency.
 
-> <i>\* Valid currencies can be found <a href="https://github.com/fdfgomes/node-exchange-rates/blob/main/src/types/Currency.ts">here</a>.</i>
+> <i>\* Valid currencies can be found <a href="https://github.com/fdfgomes/node-currency-exchange-rates/blob/main/src/types/Currency.ts">here</a>.</i>
 
 #### Valid usage example:
 
 ```js
-import exchange from 'exchange-rates';
+import exchange from 'node-currency-exchange-rates';
 
 const example = async () => {
   // convert 100 USD to EUR
