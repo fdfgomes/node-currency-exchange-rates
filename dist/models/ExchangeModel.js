@@ -40,7 +40,16 @@ class ExchangeModel {
                 fs_1.default.readFile(`${constants_1.TEMP_DATA_DIR}/${baseCurrency}.json`, (err, data) => {
                     if (err)
                         reject(err);
-                    resolve(data ? JSON.parse(data.toString()) : null);
+                    const parsedData = data
+                        ? JSON.parse(data.toString())
+                        : null;
+                    if (parsedData) {
+                        const { date } = parsedData;
+                        const formattedDate = new Date(date);
+                        const formattedParsedData = Object.assign(Object.assign({}, parsedData), { date: formattedDate });
+                        return resolve(formattedParsedData);
+                    }
+                    resolve(parsedData);
                 });
             })
                 .then((result) => {

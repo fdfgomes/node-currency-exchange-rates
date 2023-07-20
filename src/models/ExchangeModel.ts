@@ -3,6 +3,15 @@ import { IExchangeModel } from '../interfaces';
 import { Currency, CurrencyRates } from '../types';
 import fs from 'fs';
 
+type IUnformattedCurrencyRates = {
+  baseCurrency: Currency;
+  baseValue: number;
+  date: string;
+  exchangeRates: {
+    [x: string]: number;
+  }[];
+};
+
 class ExchangeModel implements IExchangeModel {
   public async create(data: CurrencyRates) {
     const { baseCurrency } = data;
@@ -32,7 +41,25 @@ class ExchangeModel implements IExchangeModel {
     return new Promise<CurrencyRates>((resolve, reject) => {
       fs.readFile(`${TEMP_DATA_DIR}/${baseCurrency}.json`, (err, data) => {
         if (err) reject(err);
-        resolve(data ? JSON.parse(data.toString()) : null);
+
+        const parsedData: IUnformattedCurrencyRates = data
+          ? JSON.parse(data.toString())
+          : null;
+
+        if (parsedData) {
+          const { date } = parsedData;
+
+          const formattedDate = new Date(date);
+
+          const formattedParsedData: CurrencyRates = {
+            ...parsedData,
+            date: formattedDate,
+          };
+
+          return resolve(formattedParsedData);
+        }
+
+        resolve(parsedData);
       });
     })
       .then((result) => {
