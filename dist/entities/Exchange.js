@@ -42,7 +42,7 @@ class Exchange {
     static formatCurrencyPairName(pairName) {
         return pairName.replace(/Dólar/gi, 'USD');
     }
-    static formatCurrencyPairBidPrice(bidPrice) {
+    static parseCurrencyPairBidPrice(bidPrice) {
         const strBidPrice = bidPrice
             .replace(/[.,]/g, (match) => (match === '.' ? ',' : '.'))
             .replace(/[,]/g, '');
@@ -54,11 +54,11 @@ class Exchange {
             parsedBidPriceDecimals = parseInt(strPriceDecimals);
         }
         if (strPriceDecimals.length > 2) {
-            parsedBidPriceDecimals = Math.round(parseInt(strPriceDecimals) / 100);
+            parsedBidPriceDecimals = parseInt(strPriceDecimals) / 100;
         }
         parsedBidPrice += parsedBidPriceInteger;
         parsedBidPrice += parsedBidPriceDecimals / 100;
-        return Number(parsedBidPrice.toFixed(2));
+        return parsedBidPrice;
     }
     static fetchLatestRates(baseCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -80,7 +80,7 @@ class Exchange {
                         }
                         // currency pair bid price
                         if (index === 1) {
-                            exchangeRate = Exchange.formatCurrencyPairBidPrice($(column).text());
+                            exchangeRate = Exchange.parseCurrencyPairBidPrice($(column).text());
                         }
                     });
                     // skip table's heading line
@@ -131,7 +131,7 @@ class Exchange {
                 if (key === toCurrency)
                     exchangeRate = _exchangeRate[key];
             });
-            return fromValue * exchangeRate;
+            return +Number(fromValue * exchangeRate).toFixed(2);
         });
     }
 }
