@@ -56,7 +56,7 @@ example();
 {
   baseCurrency: 'USD',
   baseValue: 1,
-  date: '2023-07-20T18:03:15.362Z',
+  date: 2023-07-20T18:03:15.362Z,
   exchangeRates: [
     { JPY: 140.17 },  { CHF: 0.87 },    { CAD: 1.32 },     { ZAR: 17.93 },
     { TRY: 26.79 },   { MXN: 16.86 },   { PLN: 4 },        { SEK: 10.36 },
