@@ -113,7 +113,7 @@ class Exchange {
     let rates = await Exchange._exchangeModel.findByCurrency(baseCurrency);
 
     if (!rates) {
-      rates = await this.fetchLatestRates(baseCurrency);
+      rates = await Exchange.fetchLatestRates(baseCurrency);
     }
 
     return rates;

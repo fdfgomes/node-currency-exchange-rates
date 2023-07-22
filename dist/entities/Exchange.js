@@ -117,7 +117,7 @@ class Exchange {
         return __awaiter(this, void 0, void 0, function* () {
             let rates = yield Exchange._exchangeModel.findByCurrency(baseCurrency);
             if (!rates) {
-                rates = yield this.fetchLatestRates(baseCurrency);
+                rates = yield Exchange.fetchLatestRates(baseCurrency);
             }
             return rates;
         });
