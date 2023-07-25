@@ -17,6 +17,10 @@ class ExchangeModel implements IExchangeModel {
     const { baseCurrency } = data;
 
     return new Promise<CurrencyRates>((resolve, reject) => {
+      if (!fs.existsSync(TEMP_DATA_DIR)) {
+        fs.mkdirSync(TEMP_DATA_DIR);
+      }
+
       fs.writeFile(
         `${TEMP_DATA_DIR}/${baseCurrency}.json`,
         JSON.stringify(data),
