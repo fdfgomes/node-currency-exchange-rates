@@ -19,6 +19,9 @@ class ExchangeModel {
         return __awaiter(this, void 0, void 0, function* () {
             const { baseCurrency } = data;
             return new Promise((resolve, reject) => {
+                if (!fs_1.default.existsSync(constants_1.TEMP_DATA_DIR)) {
+                    fs_1.default.mkdirSync(constants_1.TEMP_DATA_DIR, { recursive: true });
+                }
                 fs_1.default.writeFile(`${constants_1.TEMP_DATA_DIR}/${baseCurrency}.json`, JSON.stringify(data), (err) => {
                     if (err)
                         throw reject(err);

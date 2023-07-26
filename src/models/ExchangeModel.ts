@@ -18,7 +18,7 @@ class ExchangeModel implements IExchangeModel {
 
     return new Promise<CurrencyRates>((resolve, reject) => {
       if (!fs.existsSync(TEMP_DATA_DIR)) {
-        fs.mkdirSync(TEMP_DATA_DIR);
+        fs.mkdirSync(TEMP_DATA_DIR, { recursive: true });
       }
 
       fs.writeFile(

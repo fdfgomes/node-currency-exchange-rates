@@ -1,7 +1,16 @@
-import dotenv from 'dotenv';
+require('dotenv').config();
 
-dotenv.config();
+const ENVIRONMENT = process.env.ENVIRONMENT ?? 'PRD';
 
-const ENV = process.env.ENVIRONMENT ?? 'DEV';
+const TEMP_DATA_DIR_DEV = './src/.temp';
 
-export default process.env[`TEMP_DATA_DIR_${ENV}`] ?? './src/data';
+const TEMP_DATA_DIR_PRD =
+  './node_modules/node-currency-exchange-rates/dist/.temp';
+
+let TEMP_DATA_DIR = TEMP_DATA_DIR_DEV;
+
+if (ENVIRONMENT === 'PRD') {
+  TEMP_DATA_DIR = TEMP_DATA_DIR_PRD;
+}
+
+export default TEMP_DATA_DIR;
