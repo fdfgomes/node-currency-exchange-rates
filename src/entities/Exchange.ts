@@ -133,7 +133,43 @@ class Exchange {
       if (key === toCurrency) exchangeRate = _exchangeRate[key];
     });
 
-    return +Number(fromValue * exchangeRate).toFixed(2);
+    if (exchangeRate > 0) {
+      const convertedValue = fromValue * exchangeRate;
+
+      return +convertedValue.toFixed(2);
+    }
+
+    // if toCurrency is not found:
+
+    // 1. convert fromValue to USD
+    let fromCurrencyExchangeRateAgainstUSD = 0;
+
+    const usdExchangeRates = await Exchange.getRates('USD');
+
+    usdExchangeRates.exchangeRates.forEach((_exchangeRate) => {
+      const key = Object.keys(_exchangeRate)[0];
+      if (key === fromCurrency)
+        fromCurrencyExchangeRateAgainstUSD = _exchangeRate[key];
+    });
+
+    const fromValueInUSD = fromValue / fromCurrencyExchangeRateAgainstUSD;
+
+    if (toCurrency === 'USD') {
+      return +fromValueInUSD.toFixed(2);
+    }
+
+    // 2. convert fromValue in USD to requested currency
+    let toCurrencyExchangeRateAgainstUSD = 0;
+
+    usdExchangeRates.exchangeRates.forEach((_exchangeRate) => {
+      const key = Object.keys(_exchangeRate)[0];
+      if (key === toCurrency)
+        toCurrencyExchangeRateAgainstUSD = _exchangeRate[key];
+    });
+
+    const convertedValue = fromValueInUSD * toCurrencyExchangeRateAgainstUSD;
+
+    return +convertedValue.toFixed(2);
   }
 }
 
