@@ -74,6 +74,7 @@ class ExchangeModel {
                 // quotations expired, return null
                 if (resultsHours !== hours)
                     return null;
+                // quotations are still valid, return'em
                 return result;
             })
                 .catch((err) => {

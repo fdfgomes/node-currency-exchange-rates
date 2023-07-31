@@ -3,15 +3,6 @@ import { IExchangeModel } from '../interfaces';
 import { Currency, CurrencyRates } from '../types';
 import fs from 'fs';
 
-type IUnformattedCurrencyRates = {
-  baseCurrency: Currency;
-  baseValue: number;
-  date: string;
-  exchangeRates: {
-    [x: string]: number;
-  }[];
-};
-
 class ExchangeModel implements IExchangeModel {
   public async create(data: CurrencyRates) {
     const { baseCurrency } = data;
@@ -46,7 +37,7 @@ class ExchangeModel implements IExchangeModel {
       fs.readFile(`${TEMP_DATA_DIR}/${baseCurrency}.json`, (err, data) => {
         if (err) reject(err);
 
-        const parsedData: IUnformattedCurrencyRates = data
+        const parsedData: CurrencyRates = data
           ? JSON.parse(data.toString())
           : null;
 
@@ -93,6 +84,7 @@ class ExchangeModel implements IExchangeModel {
         // quotations expired, return null
         if (resultsHours !== hours) return null;
 
+        // quotations are still valid, return'em
         return result;
       })
       .catch((err) => {

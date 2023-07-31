@@ -63,7 +63,7 @@ class Exchange {
     static fetchLatestRates(baseCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
             return axios_1.default
-                .get(`${Exchange._endpoint}?currency=${baseCurrency.toLowerCase()}`)
+                .get(`${Exchange._endpoint}?currency=USD`)
                 .then(({ data }) => {
                 const $ = cheerio.load(data);
                 const $exchangeRates = $('[data-test="dynamic-table"] [class^="datatable_row__"]');
@@ -91,7 +91,7 @@ class Exchange {
                 const exchangeRates = latestRates
                     .filter(({ pair }) => {
                     const base = pair.split('/')[0];
-                    return base === baseCurrency;
+                    return base === 'USD';
                 })
                     .map(({ pair, exchange }) => {
                     const currency = pair.split('/')[1];
@@ -105,6 +105,29 @@ class Exchange {
                     date,
                     exchangeRates,
                 };
+                // if baseCurrency is not USD:
+                if (baseCurrency !== 'USD') {
+                    // 1. convert baseValue to USD
+                    let baseCurrencyExchangeRateAgainstUSD = 0;
+                    exchangeRates.forEach((_exchangeRate) => {
+                        const key = Object.keys(_exchangeRate)[0];
+                        if (key === baseCurrency) {
+                            baseCurrencyExchangeRateAgainstUSD = _exchangeRate[key];
+                        }
+                    });
+                    const baseValueInUSD = 1 / baseCurrencyExchangeRateAgainstUSD;
+                    // 2. generate exchange rates for requested currency using baseValue in USD
+                    rates.exchangeRates = [{ USD: 1 }, ...rates.exchangeRates]
+                        .map((_exchangeRate) => {
+                        const key = Object.keys(_exchangeRate)[0];
+                        const value = _exchangeRate[key];
+                        return { [key]: baseValueInUSD * value };
+                    })
+                        .filter((_exchangeRate) => {
+                        const key = Object.keys(_exchangeRate)[0];
+                        return key !== baseCurrency;
+                    });
+                }
                 Exchange._exchangeModel.upsert(rates);
                 return rates;
             })
@@ -131,31 +154,7 @@ class Exchange {
                 if (key === toCurrency)
                     exchangeRate = _exchangeRate[key];
             });
-            if (exchangeRate > 0) {
-                const convertedValue = fromValue * exchangeRate;
-                return +convertedValue.toFixed(2);
-            }
-            // if toCurrency is not found:
-            // 1. convert fromValue to USD
-            let fromCurrencyExchangeRateAgainstUSD = 0;
-            const usdExchangeRates = yield Exchange.getRates('USD');
-            usdExchangeRates.exchangeRates.forEach((_exchangeRate) => {
-                const key = Object.keys(_exchangeRate)[0];
-                if (key === fromCurrency)
-                    fromCurrencyExchangeRateAgainstUSD = _exchangeRate[key];
-            });
-            const fromValueInUSD = fromValue / fromCurrencyExchangeRateAgainstUSD;
-            if (toCurrency === 'USD') {
-                return +fromValueInUSD.toFixed(2);
-            }
-            // 2. convert fromValue in USD to requested currency
-            let toCurrencyExchangeRateAgainstUSD = 0;
-            usdExchangeRates.exchangeRates.forEach((_exchangeRate) => {
-                const key = Object.keys(_exchangeRate)[0];
-                if (key === toCurrency)
-                    toCurrencyExchangeRateAgainstUSD = _exchangeRate[key];
-            });
-            const convertedValue = fromValueInUSD * toCurrencyExchangeRateAgainstUSD;
+            const convertedValue = fromValue * exchangeRate;
             return +convertedValue.toFixed(2);
         });
     }
