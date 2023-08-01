@@ -6,7 +6,8 @@ import ExchangeModel from '../models/ExchangeModel';
 class Exchange {
   private static _exchangeModel = new ExchangeModel();
 
-  private static _endpoint = `https://br.investing.com/currencies/single-currency-crosses`;
+  private static _endpoint =
+    'https://br.investing.com/currencies/single-currency-crosses';
 
   private static formatCurrencyPairName(pairName: string) {
     return pairName.replace(/Dólar/gi, 'USD');
@@ -42,7 +43,7 @@ class Exchange {
     baseCurrency: Currency
   ): Promise<CurrencyRates> {
     return axios
-      .get(`${Exchange._endpoint}?currency=USD`)
+      .get(`${Exchange._endpoint}?currency=usd`)
       .then(({ data }) => {
         const $ = cheerio.load(data);
 
@@ -98,9 +99,8 @@ class Exchange {
           exchangeRates,
         };
 
-        // if baseCurrency is not USD:
         if (baseCurrency !== 'USD') {
-          // 1. convert baseValue to USD
+          // convert baseValue to USD
           let baseCurrencyExchangeRateAgainstUSD = 0;
 
           exchangeRates.forEach((_exchangeRate) => {
@@ -112,7 +112,7 @@ class Exchange {
 
           const baseValueInUSD = 1 / baseCurrencyExchangeRateAgainstUSD;
 
-          // 2. generate exchange rates for requested currency using baseValue in USD
+          // generate exchange rates for requested currency using baseValue in USD
           rates.exchangeRates = [{ USD: 1 }, ...rates.exchangeRates]
             .map((_exchangeRate) => {
               const key = Object.keys(_exchangeRate)[0];
@@ -124,6 +124,26 @@ class Exchange {
               return key !== baseCurrency;
             });
         }
+
+        // filter exchange rates before returning'em
+        const exchangeRatesCurrencies: string[] = [];
+
+        rates.exchangeRates.forEach((_exchangeRate) => {
+          const key = Object.keys(_exchangeRate)[0];
+          exchangeRatesCurrencies.push(key);
+        });
+
+        rates.exchangeRates = rates.exchangeRates
+          // return only valid currency pairs
+          .filter((_exchangeRate) => {
+            const key = Object.keys(_exchangeRate)[0];
+            return key.length === 3;
+          })
+          // prevent duplicated currency pairs
+          .filter((_exchangeRate, index) => {
+            const key = Object.keys(_exchangeRate)[0];
+            return exchangeRatesCurrencies.indexOf(key) === index;
+          });
 
         Exchange._exchangeModel.upsert(rates);
 

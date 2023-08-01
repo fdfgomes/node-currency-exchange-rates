@@ -63,7 +63,7 @@ class Exchange {
     static fetchLatestRates(baseCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
             return axios_1.default
-                .get(`${Exchange._endpoint}?currency=USD`)
+                .get(`${Exchange._endpoint}?currency=usd`)
                 .then(({ data }) => {
                 const $ = cheerio.load(data);
                 const $exchangeRates = $('[data-test="dynamic-table"] [class^="datatable_row__"]');
@@ -105,9 +105,8 @@ class Exchange {
                     date,
                     exchangeRates,
                 };
-                // if baseCurrency is not USD:
                 if (baseCurrency !== 'USD') {
-                    // 1. convert baseValue to USD
+                    // convert baseValue to USD
                     let baseCurrencyExchangeRateAgainstUSD = 0;
                     exchangeRates.forEach((_exchangeRate) => {
                         const key = Object.keys(_exchangeRate)[0];
@@ -116,7 +115,7 @@ class Exchange {
                         }
                     });
                     const baseValueInUSD = 1 / baseCurrencyExchangeRateAgainstUSD;
-                    // 2. generate exchange rates for requested currency using baseValue in USD
+                    // generate exchange rates for requested currency using baseValue in USD
                     rates.exchangeRates = [{ USD: 1 }, ...rates.exchangeRates]
                         .map((_exchangeRate) => {
                         const key = Object.keys(_exchangeRate)[0];
@@ -128,6 +127,23 @@ class Exchange {
                         return key !== baseCurrency;
                     });
                 }
+                // filter exchange rates before returning'em
+                const exchangeRatesCurrencies = [];
+                rates.exchangeRates.forEach((_exchangeRate) => {
+                    const key = Object.keys(_exchangeRate)[0];
+                    exchangeRatesCurrencies.push(key);
+                });
+                rates.exchangeRates = rates.exchangeRates
+                    // return only valid currency pairs
+                    .filter((_exchangeRate) => {
+                    const key = Object.keys(_exchangeRate)[0];
+                    return key.length === 3;
+                })
+                    // prevent duplicated currency pairs
+                    .filter((_exchangeRate, index) => {
+                    const key = Object.keys(_exchangeRate)[0];
+                    return exchangeRatesCurrencies.indexOf(key) === index;
+                });
                 Exchange._exchangeModel.upsert(rates);
                 return rates;
             })
@@ -160,5 +176,5 @@ class Exchange {
     }
 }
 Exchange._exchangeModel = new ExchangeModel_1.default();
-Exchange._endpoint = `https://br.investing.com/currencies/single-currency-crosses`;
+Exchange._endpoint = 'https://br.investing.com/currencies/single-currency-crosses';
 exports.default = Exchange;

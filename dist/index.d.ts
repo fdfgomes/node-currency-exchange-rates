@@ -1,4 +1,5 @@
 import exchange from './entities/Exchange';
+import { Currency } from './types';
 export declare const getRates: typeof exchange.getRates;
 export declare const convert: typeof exchange.convert;
 declare const _default: {
@@ -6,3 +7,4 @@ declare const _default: {
     convert: typeof exchange.convert;
 };
 export default _default;
+export type { Currency };

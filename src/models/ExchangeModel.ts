@@ -31,15 +31,17 @@ class ExchangeModel implements IExchangeModel {
   public async findByCurrency(
     baseCurrency: Currency
   ): Promise<CurrencyRates | null> {
-    // quotations are valid for 1 hour
+    // quotes are valid for 1 hour
     // after that must refetch rates and update local data
     return new Promise<CurrencyRates>((resolve, reject) => {
       fs.readFile(`${TEMP_DATA_DIR}/${baseCurrency}.json`, (err, data) => {
         if (err) reject(err);
 
-        const parsedData: CurrencyRates = data
-          ? JSON.parse(data.toString())
-          : null;
+        let parsedData: CurrencyRates | null = null;
+
+        try {
+          parsedData = data ? JSON.parse(data.toString()) : null;
+        } catch (err) {}
 
         if (parsedData) {
           const { date } = parsedData;
@@ -54,11 +56,11 @@ class ExchangeModel implements IExchangeModel {
           return resolve(formattedParsedData);
         }
 
-        resolve(parsedData);
+        reject('Local quotes not available');
       });
     })
       .then((result) => {
-        // validate if local quotations exists and, if so, if they are still valid
+        // validate if local quotes exists and, if so, if they are still valid
         const today = new Date();
         const resultDate = new Date(result.date);
 
@@ -70,7 +72,7 @@ class ExchangeModel implements IExchangeModel {
         const month = today.getMonth() + 1;
         const year = today.getFullYear();
 
-        // quotations are not from today, return null
+        // quotes are not from today, return null
         if (
           !(resultDay === day && resultMonth === month && resultYear === year)
         ) {
@@ -81,10 +83,10 @@ class ExchangeModel implements IExchangeModel {
 
         const hours = today.getHours();
 
-        // quotations expired, return null
+        // quotes expired, return null
         if (resultsHours !== hours) return null;
 
-        // quotations are still valid, return'em
+        // quotes are still valid, return'em
         return result;
       })
       .catch((err) => {

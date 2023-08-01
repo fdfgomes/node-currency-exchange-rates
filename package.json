@@ -1,7 +1,7 @@
 {
   "name": "node-currency-exchange-rates",
-  "version": "1.0.5",
-  "description": "",
+  "version": "1.0.6",
+  "description": "Currency converter and exchange rates provider.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -9,9 +9,21 @@
     "dev": "nodemon --watch \"./src/**\" --ext \"ts,js\" --exec \"ts-node ./src/example.ts\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fdfgomes/node-currency-exchange-rates.git"
+  },
+  "keywords": [
+    "currency",
+    "currencies",
+    "exchange",
+    "exchanges",
+    "convert",
+    "converter"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
+  "homepage": "https://github.com/fdfgomes/node-currency-exchange-rates#readme",
   "dependencies": {
     "axios": "^1.4.0",
     "cheerio": "^1.0.0-rc.12",

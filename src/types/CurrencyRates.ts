@@ -5,7 +5,7 @@ type CurrencyRates = {
   baseValue: number;
   date: Date;
   exchangeRates: {
-    [x: string]: number;
+    [key: string]: number;
   }[];
 };
 

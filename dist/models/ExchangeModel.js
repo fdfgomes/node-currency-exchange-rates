@@ -37,26 +37,28 @@ class ExchangeModel {
     }
     findByCurrency(baseCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
-            // quotations are valid for 1 hour
+            // quotes are valid for 1 hour
             // after that must refetch rates and update local data
             return new Promise((resolve, reject) => {
                 fs_1.default.readFile(`${constants_1.TEMP_DATA_DIR}/${baseCurrency}.json`, (err, data) => {
                     if (err)
                         reject(err);
-                    const parsedData = data
-                        ? JSON.parse(data.toString())
-                        : null;
+                    let parsedData = null;
+                    try {
+                        parsedData = data ? JSON.parse(data.toString()) : null;
+                    }
+                    catch (err) { }
                     if (parsedData) {
                         const { date } = parsedData;
                         const formattedDate = new Date(date);
                         const formattedParsedData = Object.assign(Object.assign({}, parsedData), { date: formattedDate });
                         return resolve(formattedParsedData);
                     }
-                    resolve(parsedData);
+                    reject('Local quotes not available');
                 });
             })
                 .then((result) => {
-                // validate if local quotations exists and, if so, if they are still valid
+                // validate if local quotes exists and, if so, if they are still valid
                 const today = new Date();
                 const resultDate = new Date(result.date);
                 const resultDay = resultDate.getDate();
@@ -65,16 +67,16 @@ class ExchangeModel {
                 const day = today.getDate();
                 const month = today.getMonth() + 1;
                 const year = today.getFullYear();
-                // quotations are not from today, return null
+                // quotes are not from today, return null
                 if (!(resultDay === day && resultMonth === month && resultYear === year)) {
                     return null;
                 }
                 const resultsHours = resultDate.getHours();
                 const hours = today.getHours();
-                // quotations expired, return null
+                // quotes expired, return null
                 if (resultsHours !== hours)
                     return null;
-                // quotations are still valid, return'em
+                // quotes are still valid, return'em
                 return result;
             })
                 .catch((err) => {
