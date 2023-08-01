@@ -2,7 +2,7 @@
 
 Open-source project designed to provide exchange rates and offer a simple currency conversion experience.
 
-### Supported currencies
+## Supported currencies
 
 The following currencies are supported. You can get exchange rates or convert currency values between them:
 
