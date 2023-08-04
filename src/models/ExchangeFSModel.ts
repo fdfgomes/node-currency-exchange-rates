@@ -3,7 +3,7 @@ import { IExchangeModel } from '../interfaces';
 import { Currency, CurrencyRates } from '../types';
 import fs from 'fs';
 
-class ExchangeModel implements IExchangeModel {
+class ExchangeFSModel implements IExchangeModel {
   public async create(data: CurrencyRates) {
     const { baseCurrency } = data;
 
@@ -22,7 +22,7 @@ class ExchangeModel implements IExchangeModel {
       );
     })
       .then((result) => result)
-      .catch((err) => {
+      .catch((_err) => {
         // console.log(err);
         return null;
       });
@@ -41,7 +41,9 @@ class ExchangeModel implements IExchangeModel {
 
         try {
           parsedData = data ? JSON.parse(data.toString()) : null;
-        } catch (err) {}
+        } catch (_err) {
+          //
+        }
 
         if (parsedData) {
           const { date } = parsedData;
@@ -56,7 +58,7 @@ class ExchangeModel implements IExchangeModel {
           return resolve(formattedParsedData);
         }
 
-        reject('Local quotes not available');
+        reject('Local quotes are not available');
       });
     })
       .then((result) => {
@@ -89,19 +91,19 @@ class ExchangeModel implements IExchangeModel {
         // quotes are still valid, return'em
         return result;
       })
-      .catch((err) => {
+      .catch((_err) => {
         // console.log(err);
         return null;
       });
   }
 
   public async update(data: CurrencyRates): Promise<any> {
-    return await this.create(data);
+    return this.create(data);
   }
 
   public async upsert(data: CurrencyRates): Promise<any> {
-    return await this.create(data);
+    return this.create(data);
   }
 }
 
-export default ExchangeModel;
+export default ExchangeFSModel;

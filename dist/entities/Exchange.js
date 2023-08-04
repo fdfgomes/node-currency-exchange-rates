@@ -37,8 +37,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const cheerio = __importStar(require("cheerio"));
 const axios_1 = __importDefault(require("axios"));
-const ExchangeModel_1 = __importDefault(require("../models/ExchangeModel"));
+const models_1 = require("../models");
 class Exchange {
+    constructor(redisDatabaseURL = '') {
+        if (redisDatabaseURL) {
+            this._exchangeModel = new models_1.ExchangeRedisModel(redisDatabaseURL);
+        }
+        else {
+            this._exchangeModel = new models_1.ExchangeFSModel();
+        }
+    }
     static formatCurrencyPairName(pairName) {
         return pairName.replace(/Dólar/gi, 'USD');
     }
@@ -60,7 +68,7 @@ class Exchange {
         parsedBidPrice += parsedBidPriceDecimals / 100;
         return parsedBidPrice;
     }
-    static fetchLatestRates(baseCurrency) {
+    fetchLatestRates(baseCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
             return axios_1.default
                 .get(`${Exchange._endpoint}?currency=usd`)
@@ -144,7 +152,7 @@ class Exchange {
                     const key = Object.keys(_exchangeRate)[0];
                     return exchangeRatesCurrencies.indexOf(key) === index;
                 });
-                Exchange._exchangeModel.upsert(rates);
+                this._exchangeModel.upsert(rates);
                 return rates;
             })
                 .catch((err) => {
@@ -152,29 +160,34 @@ class Exchange {
             });
         });
     }
-    static getRates(baseCurrency = 'USD') {
+    getRates(baseCurrency = 'USD') {
         return __awaiter(this, void 0, void 0, function* () {
-            let rates = yield Exchange._exchangeModel.findByCurrency(baseCurrency);
+            let rates = yield this._exchangeModel.findByCurrency(baseCurrency);
             if (!rates) {
-                rates = yield Exchange.fetchLatestRates(baseCurrency);
+                rates = yield this.fetchLatestRates(baseCurrency);
             }
             return rates;
         });
     }
-    static convert(fromCurrency, fromValue, toCurrency) {
+    convert(fromCurrency, fromValue, toCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { exchangeRates } = yield Exchange.getRates(fromCurrency);
             let exchangeRate = 0;
-            exchangeRates.forEach((_exchangeRate) => {
-                const key = Object.keys(_exchangeRate)[0];
-                if (key === toCurrency)
-                    exchangeRate = _exchangeRate[key];
-            });
+            // fulfill exchangeRate
+            for (let attempt = 0; attempt < 5; attempt += 1) {
+                const { exchangeRates } = yield this.getRates(fromCurrency);
+                exchangeRates.forEach((_exchangeRate) => {
+                    const key = Object.keys(_exchangeRate)[0];
+                    if (key === toCurrency)
+                        exchangeRate = _exchangeRate[key];
+                });
+                if (exchangeRate > 0)
+                    break;
+                yield this.fetchLatestRates(fromCurrency);
+            }
             const convertedValue = fromValue * exchangeRate;
             return +convertedValue.toFixed(2);
         });
     }
 }
-Exchange._exchangeModel = new ExchangeModel_1.default();
 Exchange._endpoint = 'https://br.investing.com/currencies/single-currency-crosses';
 exports.default = Exchange;

@@ -1,13 +1,22 @@
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 import { Currency, CurrencyRates, ExchangeRate } from '../types';
-import ExchangeModel from '../models/ExchangeModel';
+import { ExchangeFSModel, ExchangeRedisModel } from '../models';
+import { IExchangeModel } from '../interfaces';
 
 class Exchange {
-  private static _exchangeModel = new ExchangeModel();
+  private _exchangeModel: IExchangeModel;
 
   private static _endpoint =
     'https://br.investing.com/currencies/single-currency-crosses';
+
+  constructor(redisDatabaseURL: string = '') {
+    if (redisDatabaseURL) {
+      this._exchangeModel = new ExchangeRedisModel(redisDatabaseURL);
+    } else {
+      this._exchangeModel = new ExchangeFSModel();
+    }
+  }
 
   private static formatCurrencyPairName(pairName: string) {
     return pairName.replace(/Dólar/gi, 'USD');
@@ -39,7 +48,7 @@ class Exchange {
     return parsedBidPrice;
   }
 
-  private static async fetchLatestRates(
+  private async fetchLatestRates(
     baseCurrency: Currency
   ): Promise<CurrencyRates> {
     return axios
@@ -145,7 +154,7 @@ class Exchange {
             return exchangeRatesCurrencies.indexOf(key) === index;
           });
 
-        Exchange._exchangeModel.upsert(rates);
+        this._exchangeModel.upsert(rates);
 
         return rates;
       })
@@ -154,31 +163,38 @@ class Exchange {
       });
   }
 
-  public static async getRates(
+  public async getRates(
     baseCurrency: Currency = 'USD'
   ): Promise<CurrencyRates> {
-    let rates = await Exchange._exchangeModel.findByCurrency(baseCurrency);
+    let rates = await this._exchangeModel.findByCurrency(baseCurrency);
 
     if (!rates) {
-      rates = await Exchange.fetchLatestRates(baseCurrency);
+      rates = await this.fetchLatestRates(baseCurrency);
     }
 
     return rates;
   }
 
-  public static async convert(
+  public async convert(
     fromCurrency: Currency,
     fromValue: number,
     toCurrency: Currency
   ) {
-    const { exchangeRates } = await Exchange.getRates(fromCurrency);
-
     let exchangeRate = 0;
 
-    exchangeRates.forEach((_exchangeRate) => {
-      const key = Object.keys(_exchangeRate)[0];
-      if (key === toCurrency) exchangeRate = _exchangeRate[key];
-    });
+    // fulfill exchangeRate
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const { exchangeRates } = await this.getRates(fromCurrency);
+
+      exchangeRates.forEach((_exchangeRate) => {
+        const key = Object.keys(_exchangeRate)[0];
+        if (key === toCurrency) exchangeRate = _exchangeRate[key];
+      });
+
+      if (exchangeRate > 0) break;
+
+      await this.fetchLatestRates(fromCurrency);
+    }
 
     const convertedValue = fromValue * exchangeRate;
 

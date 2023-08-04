@@ -1,11 +1,12 @@
 import { Currency, CurrencyRates } from '../types';
 declare class Exchange {
-    private static _exchangeModel;
+    private _exchangeModel;
     private static _endpoint;
+    constructor(redisDatabaseURL?: string);
     private static formatCurrencyPairName;
     private static parseCurrencyPairBidPrice;
-    private static fetchLatestRates;
-    static getRates(baseCurrency?: Currency): Promise<CurrencyRates>;
-    static convert(fromCurrency: Currency, fromValue: number, toCurrency: Currency): Promise<number>;
+    private fetchLatestRates;
+    getRates(baseCurrency?: Currency): Promise<CurrencyRates>;
+    convert(fromCurrency: Currency, fromValue: number, toCurrency: Currency): Promise<number>;
 }
 export default Exchange;

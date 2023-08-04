@@ -1,10 +1,19 @@
-import exchange from './entities/Exchange';
+import Exchange from './entities/Exchange';
 import { Currency } from './types';
 
-export const getRates = exchange.getRates;
+const exchange = new Exchange();
 
-export const convert = exchange.convert;
+export const getRates = (baseCurrency?: Currency) =>
+  exchange.getRates(baseCurrency);
+
+export const convert = (
+  fromCurrency: Currency,
+  fromValue: number,
+  toCurrency: Currency
+) => exchange.convert(fromCurrency, fromValue, toCurrency);
 
 export default { getRates, convert };
+
+export { Exchange };
 
 export type { Currency };
