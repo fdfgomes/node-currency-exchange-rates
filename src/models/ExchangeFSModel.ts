@@ -3,7 +3,7 @@ import { IExchangeModel } from '../interfaces';
 import { Currency, CurrencyRates } from '../types';
 import fs from 'fs';
 
-class ExchangeFSModel implements IExchangeModel {
+class ExchangeFSModel extends IExchangeModel {
   public async create(data: CurrencyRates) {
     const { baseCurrency } = data;
 
@@ -12,8 +12,10 @@ class ExchangeFSModel implements IExchangeModel {
         fs.mkdirSync(TEMP_DATA_DIR, { recursive: true });
       }
 
+      const fileName = this._generateFileName(baseCurrency);
+
       fs.writeFile(
-        `${TEMP_DATA_DIR}/${baseCurrency}.json`,
+        `${TEMP_DATA_DIR}/${fileName}.json`,
         JSON.stringify(data),
         (err) => {
           if (err) throw reject(err);
@@ -34,7 +36,9 @@ class ExchangeFSModel implements IExchangeModel {
     // quotes are valid for 1 hour
     // after that must refetch rates and update local data
     return new Promise<CurrencyRates>((resolve, reject) => {
-      fs.readFile(`${TEMP_DATA_DIR}/${baseCurrency}.json`, (err, data) => {
+      const fileName = this._generateFileName(baseCurrency);
+
+      fs.readFile(`${TEMP_DATA_DIR}/${fileName}.json`, (err, data) => {
         if (err) reject(err);
 
         let parsedData: CurrencyRates | null = null;

@@ -13,9 +13,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const redis_1 = require("redis");
+const interfaces_1 = require("../interfaces");
 const moment_1 = __importDefault(require("moment"));
-class ExchangeRedisModel {
+class ExchangeRedisModel extends interfaces_1.IExchangeModel {
     constructor(redisDatabaseURL) {
+        super();
         this._client = (0, redis_1.createClient)({
             url: redisDatabaseURL,
         });
@@ -27,11 +29,12 @@ class ExchangeRedisModel {
                 const { baseCurrency } = data;
                 if (!this._client.isReady)
                     yield this._client.connect();
-                yield this._client.set(baseCurrency, JSON.stringify(data));
                 let now = new Date();
                 now.setHours(now.getHours(), 0, 0, 0);
+                const key = this._generateFileName(baseCurrency);
+                yield this._client.set(key, JSON.stringify(data));
                 const expireAt = (0, moment_1.default)(now).add(1, 'hour').toDate();
-                yield this._client.expireAt(baseCurrency, expireAt);
+                yield this._client.expireAt(key, expireAt);
                 return data;
             }
             catch (_err) {
@@ -44,7 +47,8 @@ class ExchangeRedisModel {
             try {
                 if (!this._client.isReady)
                     yield this._client.connect();
-                const rates = yield this._client.get(baseCurrency);
+                const key = this._generateFileName(baseCurrency);
+                const rates = yield this._client.get(key);
                 let parsedRates = null;
                 try {
                     parsedRates = rates ? JSON.parse(rates.toString()) : null;

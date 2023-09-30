@@ -1,6 +1,6 @@
 import { IExchangeModel } from '../interfaces';
 import { Currency, CurrencyRates } from '../types';
-declare class ExchangeFSModel implements IExchangeModel {
+declare class ExchangeFSModel extends IExchangeModel {
     create(data: CurrencyRates): Promise<CurrencyRates | null>;
     findByCurrency(baseCurrency: Currency): Promise<CurrencyRates | null>;
     update(data: CurrencyRates): Promise<any>;

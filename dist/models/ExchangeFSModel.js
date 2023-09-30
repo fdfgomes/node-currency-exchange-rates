@@ -13,8 +13,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const constants_1 = require("../constants");
+const interfaces_1 = require("../interfaces");
 const fs_1 = __importDefault(require("fs"));
-class ExchangeFSModel {
+class ExchangeFSModel extends interfaces_1.IExchangeModel {
     create(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const { baseCurrency } = data;
@@ -22,7 +23,8 @@ class ExchangeFSModel {
                 if (!fs_1.default.existsSync(constants_1.TEMP_DATA_DIR)) {
                     fs_1.default.mkdirSync(constants_1.TEMP_DATA_DIR, { recursive: true });
                 }
-                fs_1.default.writeFile(`${constants_1.TEMP_DATA_DIR}/${baseCurrency}.json`, JSON.stringify(data), (err) => {
+                const fileName = this._generateFileName(baseCurrency);
+                fs_1.default.writeFile(`${constants_1.TEMP_DATA_DIR}/${fileName}.json`, JSON.stringify(data), (err) => {
                     if (err)
                         throw reject(err);
                     resolve(data);
@@ -40,7 +42,8 @@ class ExchangeFSModel {
             // quotes are valid for 1 hour
             // after that must refetch rates and update local data
             return new Promise((resolve, reject) => {
-                fs_1.default.readFile(`${constants_1.TEMP_DATA_DIR}/${baseCurrency}.json`, (err, data) => {
+                const fileName = this._generateFileName(baseCurrency);
+                fs_1.default.readFile(`${constants_1.TEMP_DATA_DIR}/${fileName}.json`, (err, data) => {
                     if (err)
                         reject(err);
                     let parsedData = null;

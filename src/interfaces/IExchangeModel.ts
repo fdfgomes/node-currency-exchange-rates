@@ -1,10 +1,19 @@
 import { Currency, CurrencyRates } from '../types';
 
-interface IExchangeModel {
-  create(data: CurrencyRates): Promise<CurrencyRates | null>;
-  findByCurrency(baseCurrency: Currency): Promise<CurrencyRates | null>;
-  update(data: CurrencyRates): Promise<CurrencyRates | null>;
-  upsert(data: CurrencyRates): Promise<CurrencyRates | null>;
+abstract class IExchangeModel {
+  protected _generateFileName(baseCurrency: Currency) {
+    return `exchange_rates_${baseCurrency}`;
+  }
+
+  public abstract create(data: CurrencyRates): Promise<CurrencyRates | null>;
+
+  public abstract findByCurrency(
+    baseCurrency: Currency
+  ): Promise<CurrencyRates | null>;
+
+  public abstract update(data: CurrencyRates): Promise<CurrencyRates | null>;
+
+  public abstract upsert(data: CurrencyRates): Promise<CurrencyRates | null>;
 }
 
 export default IExchangeModel;

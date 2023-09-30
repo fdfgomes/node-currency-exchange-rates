@@ -1,6 +1,6 @@
 import { IExchangeModel } from '../interfaces';
 import { CurrencyRates, Currency } from '../types';
-declare class ExchangeRedisModel implements IExchangeModel {
+declare class ExchangeRedisModel extends IExchangeModel {
     private _client;
     constructor(redisDatabaseURL: string);
     create(data: CurrencyRates): Promise<CurrencyRates | null>;

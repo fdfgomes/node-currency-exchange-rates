@@ -180,6 +180,8 @@ class Exchange {
     fromValue: number,
     toCurrency: Currency
   ) {
+    if (fromCurrency === toCurrency) return fromValue;
+
     let exchangeRate = 0;
 
     // fulfill exchangeRate

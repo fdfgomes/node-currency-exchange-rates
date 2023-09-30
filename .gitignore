@@ -1,3 +1,4 @@
 # .env
 .temp
+.vscode
 node_modules/

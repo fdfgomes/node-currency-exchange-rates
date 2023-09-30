@@ -171,6 +171,8 @@ class Exchange {
     }
     convert(fromCurrency, fromValue, toCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (fromCurrency === toCurrency)
+                return fromValue;
             let exchangeRate = 0;
             // fulfill exchangeRate
             for (let attempt = 0; attempt < 5; attempt += 1) {

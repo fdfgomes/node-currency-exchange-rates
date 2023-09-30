@@ -3,10 +3,12 @@ import { IExchangeModel } from '../interfaces';
 import { CurrencyRates, Currency } from '../types';
 import moment from 'moment';
 
-class ExchangeRedisModel implements IExchangeModel {
+class ExchangeRedisModel extends IExchangeModel {
   private _client: RedisClientType;
 
   constructor(redisDatabaseURL: string) {
+    super();
+
     this._client = createClient({
       url: redisDatabaseURL,
     });
@@ -20,15 +22,17 @@ class ExchangeRedisModel implements IExchangeModel {
 
       if (!this._client.isReady) await this._client.connect();
 
-      await this._client.set(baseCurrency, JSON.stringify(data));
-
       let now = new Date();
 
       now.setHours(now.getHours(), 0, 0, 0);
 
+      const key = this._generateFileName(baseCurrency);
+
+      await this._client.set(key, JSON.stringify(data));
+
       const expireAt = moment(now).add(1, 'hour').toDate();
 
-      await this._client.expireAt(baseCurrency, expireAt);
+      await this._client.expireAt(key, expireAt);
 
       return data;
     } catch (_err) {
@@ -42,7 +46,9 @@ class ExchangeRedisModel implements IExchangeModel {
     try {
       if (!this._client.isReady) await this._client.connect();
 
-      const rates = await this._client.get(baseCurrency);
+      const key = this._generateFileName(baseCurrency);
+
+      const rates = await this._client.get(key);
 
       let parsedRates: CurrencyRates | null = null;
 
