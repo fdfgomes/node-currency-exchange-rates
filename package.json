@@ -1,6 +1,6 @@
 {
   "name": "node-currency-exchange-rates",
-  "version": "1.0.9",
+  "version": "1.0.9-b",
   "description": "Currency converter and exchange rates provider.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

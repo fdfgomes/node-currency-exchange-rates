@@ -72,7 +72,7 @@ class Exchange {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 // Launch the browser and open a new blank page
-                const browser = yield puppeteer_1.default.launch({ headless: 'new' });
+                const browser = yield puppeteer_1.default.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
                 const page = yield browser.newPage();
                 // Navigate the page to a URL
                 yield page.goto(`${Exchange._endpoint}?currency=usd`, {
