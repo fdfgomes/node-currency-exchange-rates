@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
-import axios from 'axios';
 import { Currency, CurrencyRates, ExchangeRate } from '../types';
 import { ExchangeFSModel, ExchangeRedisModel } from '../models';
 import { IExchangeModel } from '../interfaces';
+import puppeteer from 'puppeteer';
 
 class Exchange {
   private _exchangeModel: IExchangeModel;
@@ -51,116 +51,145 @@ class Exchange {
   private async fetchLatestRates(
     baseCurrency: Currency
   ): Promise<CurrencyRates> {
-    return axios
-      .get(`${Exchange._endpoint}?currency=usd`)
-      .then(({ data }) => {
-        const $ = cheerio.load(data);
+    try {
+      // Launch the browser and open a new blank page
+      const browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+      const page = await browser.newPage();
 
-        const $exchangeRates = $(
-          '[data-test="dynamic-table"] [class^="datatable_row__"]'
-        );
+      // Navigate the page to a URL
+      await page.goto(`${Exchange._endpoint}?currency=usd`, {
+        waitUntil: 'domcontentloaded',
+      });
 
-        const latestRates: ExchangeRate[] = [];
+      // Wait for exchange rates table
+      const $exchangeRatesTable = await page.waitForSelector(
+        'table[class^="datatable-v2_table"]'
+      );
 
-        const date = new Date();
+      const data = await page.content();
 
-        $exchangeRates.each((_, exchange) => {
-          const columns = $(exchange).find('td');
+      if (!$exchangeRatesTable || !data) {
+        throw new Error('Failed to retrieve exchange rates');
+      }
 
-          let pairName: string = '';
-          let exchangeRate: any = 0.0;
+      const $ = cheerio.load(data);
 
-          columns.each((index, column) => {
-            // currency pair name
-            if (index === 0) {
-              pairName = Exchange.formatCurrencyPairName($(column).text());
-            }
-            // currency pair bid price
-            if (index === 1) {
-              exchangeRate = Exchange.parseCurrencyPairBidPrice(
-                $(column).text()
-              );
-            }
-          });
+      const $exchangeRates = $(
+        'table[class^="datatable-v2_table"] tr[class^="datatable-v2_row"]'
+      );
 
-          // skip table's heading line
-          if (pairName) {
-            latestRates.push({ pair: pairName, exchange: exchangeRate });
+      const latestRates: ExchangeRate[] = [];
+
+      const date = new Date();
+
+      $exchangeRates.each((_, exchange) => {
+        const columns = $(exchange).find('td[class^=datatable-v2_cell]');
+
+        let pairName: string = '';
+        let exchangeRate: any = 0.0;
+
+        columns.each((index, column) => {
+          // currency pair name
+          if (index === 1) {
+            pairName = Exchange.formatCurrencyPairName($(column).text()).trim();
+          }
+          // currency pair bid price
+          if (index === 2) {
+            exchangeRate = Exchange.parseCurrencyPairBidPrice($(column).text());
           }
         });
 
-        const exchangeRates = latestRates
-          .filter(({ pair }) => {
-            const base = pair.split('/')[0];
-            return base === 'USD';
-          })
-          .map(({ pair, exchange }) => {
-            const currency = pair.split('/')[1];
-            return {
-              [currency]: exchange,
-            };
-          });
-
-        const rates = {
-          baseCurrency,
-          baseValue: 1,
-          date,
-          exchangeRates,
-        };
-
-        if (baseCurrency !== 'USD') {
-          // convert baseValue to USD
-          let baseCurrencyExchangeRateAgainstUSD = 0;
-
-          exchangeRates.forEach((_exchangeRate) => {
-            const key = Object.keys(_exchangeRate)[0];
-            if (key === baseCurrency) {
-              baseCurrencyExchangeRateAgainstUSD = _exchangeRate[key];
-            }
-          });
-
-          const baseValueInUSD = 1 / baseCurrencyExchangeRateAgainstUSD;
-
-          // generate exchange rates for requested currency using baseValue in USD
-          rates.exchangeRates = [{ USD: 1 }, ...rates.exchangeRates]
-            .map((_exchangeRate) => {
-              const key = Object.keys(_exchangeRate)[0];
-              const value = _exchangeRate[key];
-              return { [key]: baseValueInUSD * value };
-            })
-            .filter((_exchangeRate) => {
-              const key = Object.keys(_exchangeRate)[0];
-              return key !== baseCurrency;
-            });
+        // skip table's heading line
+        if (pairName) {
+          latestRates.push({ pair: pairName, exchange: exchangeRate });
         }
+      });
 
-        // filter exchange rates before returning'em
-        const exchangeRatesCurrencies: string[] = [];
+      // console.log({ latestRates });
 
-        rates.exchangeRates.forEach((_exchangeRate) => {
-          const key = Object.keys(_exchangeRate)[0];
-          exchangeRatesCurrencies.push(key);
+      const exchangeRates = latestRates
+        .filter(({ pair }) => {
+          const base = pair.split('/')[0];
+          return base === 'USD';
+        })
+        .map(({ pair, exchange }) => {
+          const currency = pair.split('/')[1].trim();
+
+          return {
+            [currency]: exchange,
+          };
         });
 
-        rates.exchangeRates = rates.exchangeRates
-          // return only valid currency pairs
+      // console.log({ exchangeRates });
+
+      const rates = {
+        baseCurrency,
+        baseValue: 1,
+        date,
+        exchangeRates,
+      };
+
+      if (baseCurrency !== 'USD') {
+        // convert baseValue to USD
+        let baseCurrencyExchangeRateAgainstUSD = 0;
+
+        exchangeRates.forEach((_exchangeRate) => {
+          const key = Object.keys(_exchangeRate)[0];
+          if (key === baseCurrency) {
+            baseCurrencyExchangeRateAgainstUSD = _exchangeRate[key];
+          }
+        });
+
+        const baseValueInUSD = 1 / baseCurrencyExchangeRateAgainstUSD;
+
+        // generate exchange rates for requested currency using baseValue in USD
+        rates.exchangeRates = [{ USD: 1 }, ...rates.exchangeRates]
+          .map((_exchangeRate) => {
+            const key = Object.keys(_exchangeRate)[0];
+            const value = _exchangeRate[key];
+            return { [key]: baseValueInUSD * value };
+          })
           .filter((_exchangeRate) => {
             const key = Object.keys(_exchangeRate)[0];
-            return key.length === 3;
-          })
-          // prevent duplicated currency pairs
-          .filter((_exchangeRate, index) => {
-            const key = Object.keys(_exchangeRate)[0];
-            return exchangeRatesCurrencies.indexOf(key) === index;
+            return key !== baseCurrency;
           });
+      }
 
-        this._exchangeModel.upsert(rates);
+      // filter exchange rates before returning'em
+      const exchangeRatesCurrencies: string[] = [];
 
-        return rates;
-      })
-      .catch((err) => {
-        throw new Error(err);
+      rates.exchangeRates.forEach((_exchangeRate) => {
+        const key = Object.keys(_exchangeRate)[0];
+        exchangeRatesCurrencies.push(key);
       });
+
+      rates.exchangeRates = rates.exchangeRates
+        // return only valid currency pairs
+        .filter((_exchangeRate) => {
+          const key = Object.keys(_exchangeRate)[0];
+          return key.length === 3;
+        })
+        // prevent duplicated currency pairs
+        .filter((_exchangeRate, index) => {
+          const key = Object.keys(_exchangeRate)[0];
+          return exchangeRatesCurrencies.indexOf(key) === index;
+        });
+
+      // console.log({ rates });
+
+      // console.log(rates);
+
+      this._exchangeModel.upsert(rates);
+
+      await browser.close();
+
+      return rates;
+    } catch (err: any) {
+      throw new Error(err);
+    }
   }
 
   public async getRates(

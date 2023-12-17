@@ -36,8 +36,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const cheerio = __importStar(require("cheerio"));
-const axios_1 = __importDefault(require("axios"));
 const models_1 = require("../models");
+const puppeteer_1 = __importDefault(require("puppeteer"));
 class Exchange {
     constructor(redisDatabaseURL = '') {
         if (redisDatabaseURL) {
@@ -70,24 +70,35 @@ class Exchange {
     }
     fetchLatestRates(baseCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
-            return axios_1.default
-                .get(`${Exchange._endpoint}?currency=usd`)
-                .then(({ data }) => {
+            try {
+                // Launch the browser and open a new blank page
+                const browser = yield puppeteer_1.default.launch({ headless: 'new' });
+                const page = yield browser.newPage();
+                // Navigate the page to a URL
+                yield page.goto(`${Exchange._endpoint}?currency=usd`, {
+                    waitUntil: 'domcontentloaded',
+                });
+                // Wait for exchange rates table
+                const $exchangeRatesTable = yield page.waitForSelector('table[class^="datatable-v2_table"]');
+                const data = yield page.content();
+                if (!$exchangeRatesTable || !data) {
+                    throw new Error('Failed to retrieve exchange rates');
+                }
                 const $ = cheerio.load(data);
-                const $exchangeRates = $('[data-test="dynamic-table"] [class^="datatable_row__"]');
+                const $exchangeRates = $('table[class^="datatable-v2_table"] tr[class^="datatable-v2_row"]');
                 const latestRates = [];
                 const date = new Date();
                 $exchangeRates.each((_, exchange) => {
-                    const columns = $(exchange).find('td');
+                    const columns = $(exchange).find('td[class^=datatable-v2_cell]');
                     let pairName = '';
                     let exchangeRate = 0.0;
                     columns.each((index, column) => {
                         // currency pair name
-                        if (index === 0) {
-                            pairName = Exchange.formatCurrencyPairName($(column).text());
+                        if (index === 1) {
+                            pairName = Exchange.formatCurrencyPairName($(column).text()).trim();
                         }
                         // currency pair bid price
-                        if (index === 1) {
+                        if (index === 2) {
                             exchangeRate = Exchange.parseCurrencyPairBidPrice($(column).text());
                         }
                     });
@@ -96,17 +107,19 @@ class Exchange {
                         latestRates.push({ pair: pairName, exchange: exchangeRate });
                     }
                 });
+                // console.log({ latestRates });
                 const exchangeRates = latestRates
                     .filter(({ pair }) => {
                     const base = pair.split('/')[0];
                     return base === 'USD';
                 })
                     .map(({ pair, exchange }) => {
-                    const currency = pair.split('/')[1];
+                    const currency = pair.split('/')[1].trim();
                     return {
                         [currency]: exchange,
                     };
                 });
+                // console.log({ exchangeRates });
                 const rates = {
                     baseCurrency,
                     baseValue: 1,
@@ -152,12 +165,15 @@ class Exchange {
                     const key = Object.keys(_exchangeRate)[0];
                     return exchangeRatesCurrencies.indexOf(key) === index;
                 });
+                // console.log({ rates });
+                // console.log(rates);
                 this._exchangeModel.upsert(rates);
+                yield browser.close();
                 return rates;
-            })
-                .catch((err) => {
+            }
+            catch (err) {
                 throw new Error(err);
-            });
+            }
         });
     }
     getRates(baseCurrency = 'USD') {
