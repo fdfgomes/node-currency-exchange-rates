@@ -1,4 +1,8 @@
-import exchange from './index';
+import { Exchange } from './index';
+
+const exchange = new Exchange();
+
+exchange.refreshRatesInterval = '24h';
 
 const example = async () => {
   const rates = await exchange.getRates('USD');

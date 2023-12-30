@@ -1,7 +1,13 @@
 import * as cheerio from 'cheerio';
-import { Currency, CurrencyRates, ExchangeRate } from '../types';
+import {
+  Currency,
+  CurrencyRates,
+  ExchangeRate,
+  RefreshRatesInverval,
+} from '../types';
 import { ExchangeFSModel, ExchangeRedisModel } from '../models';
 import { IExchangeModel } from '../interfaces';
+import { differenceInHours } from 'date-fns';
 import puppeteer from 'puppeteer';
 
 class Exchange {
@@ -9,6 +15,8 @@ class Exchange {
 
   private static _endpoint =
     'https://br.investing.com/currencies/single-currency-crosses';
+
+  private _refreshRatesInterval: RefreshRatesInverval = '1h';
 
   constructor(redisDatabaseURL: string = '') {
     if (redisDatabaseURL) {
@@ -18,11 +26,11 @@ class Exchange {
     }
   }
 
-  private static formatCurrencyPairName(pairName: string) {
+  private static _formatCurrencyPairName(pairName: string) {
     return pairName.replace(/Dólar/gi, 'USD');
   }
 
-  private static parseCurrencyPairBidPrice(bidPrice: string) {
+  private static _parseCurrencyPairBidPrice(bidPrice: string) {
     const strBidPrice = bidPrice
       .replace(/[.,]/g, (match) => (match === '.' ? ',' : '.'))
       .replace(/[,]/g, '');
@@ -48,7 +56,7 @@ class Exchange {
     return parsedBidPrice;
   }
 
-  private async fetchLatestRates(
+  private async _fetchLatestRates(
     baseCurrency: Currency
   ): Promise<CurrencyRates> {
     try {
@@ -94,11 +102,15 @@ class Exchange {
         columns.each((index, column) => {
           // currency pair name
           if (index === 1) {
-            pairName = Exchange.formatCurrencyPairName($(column).text()).trim();
+            pairName = Exchange._formatCurrencyPairName(
+              $(column).text()
+            ).trim();
           }
           // currency pair bid price
           if (index === 2) {
-            exchangeRate = Exchange.parseCurrencyPairBidPrice($(column).text());
+            exchangeRate = Exchange._parseCurrencyPairBidPrice(
+              $(column).text()
+            );
           }
         });
 
@@ -197,8 +209,32 @@ class Exchange {
   ): Promise<CurrencyRates> {
     let rates = await this._exchangeModel.findByCurrency(baseCurrency);
 
+    if (rates) {
+      let refreshRatesIntervalInHours = 1;
+
+      switch (this.refreshRatesInterval) {
+        case '6h':
+          refreshRatesIntervalInHours = 6;
+          break;
+        case '12h':
+          refreshRatesIntervalInHours = 12;
+          break;
+        case '24h':
+          refreshRatesIntervalInHours = 24;
+          break;
+        default:
+          break;
+      }
+
+      const diff = differenceInHours(rates.date, new Date());
+
+      if (diff > refreshRatesIntervalInHours) {
+        rates = null;
+      }
+    }
+
     if (!rates) {
-      rates = await this.fetchLatestRates(baseCurrency);
+      rates = await this._fetchLatestRates(baseCurrency);
     }
 
     return rates;
@@ -224,12 +260,20 @@ class Exchange {
 
       if (exchangeRate > 0) break;
 
-      await this.fetchLatestRates(fromCurrency);
+      await this._fetchLatestRates(fromCurrency);
     }
 
     const convertedValue = fromValue * exchangeRate;
 
     return +convertedValue.toFixed(2);
+  }
+
+  set refreshRatesInterval(refreshRatesInterval: RefreshRatesInverval) {
+    this._refreshRatesInterval = refreshRatesInterval;
+  }
+
+  get refreshRatesInterval() {
+    return this._refreshRatesInterval;
   }
 }
 

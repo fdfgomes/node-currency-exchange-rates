@@ -248,6 +248,57 @@ By default this package uses local JSON files to cache currency rates data.
 
 > All cached data is refreshed hourly, so you'll always have up to date rates.
 
+### v1.1.0
+
+You can set the currency rates refresh interval. Valid intervals are `6h`, `12h` or `24h`. Default value is `1h`.
+
+#### Set currency rates refresh interval example:
+
+```js
+import { Exchange } from 'node-currency-exchange-rates';
+
+const exchange = new Exchange();
+
+exchange.refreshRatesInterval = '24h';
+
+const example = async () => {
+  const rates = await exchange.getRates('USD');
+  console.log(rates);
+};
+
+example();
+```
+
+#### Output:
+
+```js
+{
+  baseCurrency: 'USD',
+  baseValue: 1,
+  date: 2023-07-22T21:41:40.446Z,
+  exchangeRates: [
+    { JPY: 141.81 },
+    { CHF: 0.8659 },
+    { CAD: 1.3222 },
+    { ZAR: 17.948 },
+    { TRY: 26.9381 },
+    { MXN: 16.976 },
+    { PLN: 4.0075 },
+    { SEK: 10.3821 },
+    { SGD: 1.3305 },
+    { DKK: 6.6964 },
+    { NOK: 10.066 },
+    { ILS: 3.6276 },
+    { HUF: 340.46 },
+    { CZK: 21.5381 },
+    { THB: 34.0055 },
+    { AED: 3.6719 },
+    { KWD: 0.3066 },
+    ...
+  ]
+}
+```
+
 ### v1.0.7
 
 You can also use Redis to cache data instead of using the default caching strategy.

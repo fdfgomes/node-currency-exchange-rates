@@ -37,9 +37,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const cheerio = __importStar(require("cheerio"));
 const models_1 = require("../models");
+const date_fns_1 = require("date-fns");
 const puppeteer_1 = __importDefault(require("puppeteer"));
 class Exchange {
     constructor(redisDatabaseURL = '') {
+        this._refreshRatesInterval = '1h';
         if (redisDatabaseURL) {
             this._exchangeModel = new models_1.ExchangeRedisModel(redisDatabaseURL);
         }
@@ -47,10 +49,10 @@ class Exchange {
             this._exchangeModel = new models_1.ExchangeFSModel();
         }
     }
-    static formatCurrencyPairName(pairName) {
+    static _formatCurrencyPairName(pairName) {
         return pairName.replace(/Dólar/gi, 'USD');
     }
-    static parseCurrencyPairBidPrice(bidPrice) {
+    static _parseCurrencyPairBidPrice(bidPrice) {
         const strBidPrice = bidPrice
             .replace(/[.,]/g, (match) => (match === '.' ? ',' : '.'))
             .replace(/[,]/g, '');
@@ -68,11 +70,14 @@ class Exchange {
         parsedBidPrice += parsedBidPriceDecimals / 100;
         return parsedBidPrice;
     }
-    fetchLatestRates(baseCurrency) {
+    _fetchLatestRates(baseCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 // Launch the browser and open a new blank page
-                const browser = yield puppeteer_1.default.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+                const browser = yield puppeteer_1.default.launch({
+                    headless: 'new',
+                    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                });
                 const page = yield browser.newPage();
                 // Navigate the page to a URL
                 yield page.goto(`${Exchange._endpoint}?currency=usd`, {
@@ -95,11 +100,11 @@ class Exchange {
                     columns.each((index, column) => {
                         // currency pair name
                         if (index === 1) {
-                            pairName = Exchange.formatCurrencyPairName($(column).text()).trim();
+                            pairName = Exchange._formatCurrencyPairName($(column).text()).trim();
                         }
                         // currency pair bid price
                         if (index === 2) {
-                            exchangeRate = Exchange.parseCurrencyPairBidPrice($(column).text());
+                            exchangeRate = Exchange._parseCurrencyPairBidPrice($(column).text());
                         }
                     });
                     // skip table's heading line
@@ -179,8 +184,28 @@ class Exchange {
     getRates(baseCurrency = 'USD') {
         return __awaiter(this, void 0, void 0, function* () {
             let rates = yield this._exchangeModel.findByCurrency(baseCurrency);
+            if (rates) {
+                let refreshRatesIntervalInHours = 1;
+                switch (this.refreshRatesInterval) {
+                    case '6h':
+                        refreshRatesIntervalInHours = 6;
+                        break;
+                    case '12h':
+                        refreshRatesIntervalInHours = 12;
+                        break;
+                    case '24h':
+                        refreshRatesIntervalInHours = 24;
+                        break;
+                    default:
+                        break;
+                }
+                const diff = (0, date_fns_1.differenceInHours)(rates.date, new Date());
+                if (diff > refreshRatesIntervalInHours) {
+                    rates = null;
+                }
+            }
             if (!rates) {
-                rates = yield this.fetchLatestRates(baseCurrency);
+                rates = yield this._fetchLatestRates(baseCurrency);
             }
             return rates;
         });
@@ -200,11 +225,17 @@ class Exchange {
                 });
                 if (exchangeRate > 0)
                     break;
-                yield this.fetchLatestRates(fromCurrency);
+                yield this._fetchLatestRates(fromCurrency);
             }
             const convertedValue = fromValue * exchangeRate;
             return +convertedValue.toFixed(2);
         });
+    }
+    set refreshRatesInterval(refreshRatesInterval) {
+        this._refreshRatesInterval = refreshRatesInterval;
+    }
+    get refreshRatesInterval() {
+        return this._refreshRatesInterval;
     }
 }
 Exchange._endpoint = 'https://br.investing.com/currencies/single-currency-crosses';
