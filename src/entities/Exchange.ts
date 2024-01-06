@@ -207,9 +207,9 @@ class Exchange {
   public async getRates(
     baseCurrency: Currency = 'USD'
   ): Promise<CurrencyRates> {
-    let rates = await this._exchangeModel.findByCurrency(baseCurrency);
+    const cachedRates = await this._exchangeModel.findByCurrency(baseCurrency);
 
-    if (rates) {
+    if (cachedRates) {
       let refreshRatesIntervalInHours = 1;
 
       switch (this.refreshRatesInterval) {
@@ -226,18 +226,24 @@ class Exchange {
           break;
       }
 
-      const diff = differenceInHours(rates.date, new Date());
+      const diff = differenceInHours(cachedRates.date, new Date());
 
-      if (diff > refreshRatesIntervalInHours) {
-        rates = null;
+      if (diff <= refreshRatesIntervalInHours) {
+        return cachedRates;
       }
     }
 
-    if (!rates) {
-      rates = await this._fetchLatestRates(baseCurrency);
+    try {
+      const rates = await this._fetchLatestRates(baseCurrency);
+
+      return rates;
+    } catch (_err) {
+      if (cachedRates) return cachedRates;
     }
 
-    return rates;
+    throw new Error(
+      'Failed to retrieve updated exchange rates... Please try again in a few seconds'
+    );
   }
 
   public async convert(

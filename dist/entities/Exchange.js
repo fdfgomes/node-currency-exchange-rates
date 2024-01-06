@@ -183,8 +183,8 @@ class Exchange {
     }
     getRates(baseCurrency = 'USD') {
         return __awaiter(this, void 0, void 0, function* () {
-            let rates = yield this._exchangeModel.findByCurrency(baseCurrency);
-            if (rates) {
+            const cachedRates = yield this._exchangeModel.findByCurrency(baseCurrency);
+            if (cachedRates) {
                 let refreshRatesIntervalInHours = 1;
                 switch (this.refreshRatesInterval) {
                     case '6h':
@@ -199,15 +199,20 @@ class Exchange {
                     default:
                         break;
                 }
-                const diff = (0, date_fns_1.differenceInHours)(rates.date, new Date());
-                if (diff > refreshRatesIntervalInHours) {
-                    rates = null;
+                const diff = (0, date_fns_1.differenceInHours)(cachedRates.date, new Date());
+                if (diff <= refreshRatesIntervalInHours) {
+                    return cachedRates;
                 }
             }
-            if (!rates) {
-                rates = yield this._fetchLatestRates(baseCurrency);
+            try {
+                const rates = yield this._fetchLatestRates(baseCurrency);
+                return rates;
             }
-            return rates;
+            catch (_err) {
+                if (cachedRates)
+                    return cachedRates;
+            }
+            throw new Error('Failed to retrieve updated exchange rates... Please try again in a few seconds');
         });
     }
     convert(fromCurrency, fromValue, toCurrency) {
