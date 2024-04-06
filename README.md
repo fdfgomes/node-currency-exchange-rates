@@ -256,18 +256,21 @@ By default this package uses local JSON files to cache currency rates data.
 
 > All cached data is refreshed hourly, so you'll always have up to date rates.
 
-### v1.1.0
+### v1.0.7+
 
-You can set the currency rates refresh interval. Valid intervals are `6h`, `12h` or `24h`. Default value is `1h`.
+In v1.0.7 or newer versions, you can also use Redis to cache data instead of using the default caching strategy.
 
-#### Set currency rates refresh interval example:
+> Click <a href="https://github.com/fdfgomes/currency-exchange-rates-api">here</a> to see a complete example of implementation using Redis for data caching.
+
+#### Redis caching example:
 
 ```js
 import { Exchange } from 'node-currency-exchange-rates';
 
-const exchange = new Exchange();
+// must be a valid Redis connection string
+const REDIS_DATABASE_URL = 'redis://johndoe:passw0rd@awesome.redis.server:6379';
 
-exchange.refreshRatesInterval = '24h';
+const exchange = new Exchange(REDIS_DATABASE_URL);
 
 const example = async () => {
   const rates = await exchange.getRates('USD');
@@ -307,21 +310,20 @@ example();
 }
 ```
 
-### v1.0.7
+# Change logs
 
-You can also use Redis to cache data instead of using the default caching strategy.
+### v1.1.0
 
-> Click <a href="https://github.com/fdfgomes/currency-exchange-rates-api">here</a> to see a complete example of implementation using Redis for data caching.
+You can set the currency rates refresh interval. Valid intervals are `6h`, `12h` or `24h`. Default value is `1h`.
 
-#### Redis caching example:
+#### Set currency rates refresh interval example:
 
 ```js
 import { Exchange } from 'node-currency-exchange-rates';
 
-// must be a valid Redis connection string
-const REDIS_DATABASE_URL = 'redis://johndoe:passw0rd@awesome.redis.server:6379';
+const exchange = new Exchange();
 
-const exchange = new Exchange(REDIS_DATABASE_URL);
+exchange.refreshRatesInterval = '24h';
 
 const example = async () => {
   const rates = await exchange.getRates('USD');
