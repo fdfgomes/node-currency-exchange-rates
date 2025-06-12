@@ -18,7 +18,7 @@ class Exchange {
 
   private _refreshRatesInterval: RefreshRatesInverval = '1h';
 
-  constructor(redisDatabaseURL: string = '') {
+  constructor(redisDatabaseURL = '') {
     if (redisDatabaseURL) {
       this._exchangeModel = new ExchangeRedisModel(redisDatabaseURL);
     } else {
@@ -190,11 +190,9 @@ class Exchange {
           return exchangeRatesCurrencies.indexOf(key) === index;
         });
 
-      // console.log({ rates });
-
       // console.log(rates);
 
-      this._exchangeModel.upsert(rates);
+      this._exchangeModel.upsert(rates, this._refreshRatesInterval);
 
       await browser.close();
 
@@ -235,7 +233,6 @@ class Exchange {
 
     try {
       const rates = await this._fetchLatestRates(baseCurrency);
-
       return rates;
     } catch (_err) {
       if (cachedRates) return cachedRates;

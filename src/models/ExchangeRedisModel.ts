@@ -1,6 +1,6 @@
 import { RedisClientType, createClient } from 'redis';
 import { IExchangeModel } from '../interfaces';
-import { CurrencyRates, Currency } from '../types';
+import { CurrencyRates, Currency, RefreshRatesInverval } from '../types';
 import moment from 'moment';
 
 class ExchangeRedisModel extends IExchangeModel {
@@ -16,7 +16,10 @@ class ExchangeRedisModel extends IExchangeModel {
     this._client.on('error', (err) => console.log('Redis Client Error', err));
   }
 
-  public async create(data: CurrencyRates): Promise<CurrencyRates | null> {
+  public async create(
+    data: CurrencyRates,
+    expiresIn: RefreshRatesInverval = '1h'
+  ): Promise<CurrencyRates | null> {
     try {
       const { baseCurrency } = data;
 
@@ -30,7 +33,23 @@ class ExchangeRedisModel extends IExchangeModel {
 
       await this._client.set(key, JSON.stringify(data));
 
-      const expireAt = moment(now).add(1, 'hour').toDate();
+      let parsedExpiresIn = 1;
+
+      switch (expiresIn) {
+        case '6h':
+          parsedExpiresIn = 6;
+          break;
+        case '12h':
+          parsedExpiresIn = 12;
+          break;
+        case '24h':
+          parsedExpiresIn = 24;
+          break;
+        default:
+          break;
+      }
+
+      const expireAt = moment(now).add(parsedExpiresIn, 'hour').toDate();
 
       await this._client.expireAt(key, expireAt);
 
@@ -77,12 +96,18 @@ class ExchangeRedisModel extends IExchangeModel {
     }
   }
 
-  public async update(data: CurrencyRates): Promise<CurrencyRates | null> {
-    return this.create(data);
+  public async update(
+    data: CurrencyRates,
+    expiresIn: RefreshRatesInverval = '1h'
+  ): Promise<CurrencyRates | null> {
+    return this.create(data, expiresIn);
   }
 
-  public async upsert(data: CurrencyRates): Promise<CurrencyRates | null> {
-    return this.create(data);
+  public async upsert(
+    data: CurrencyRates,
+    expiresIn: RefreshRatesInverval = '1h'
+  ): Promise<CurrencyRates | null> {
+    return this.create(data, expiresIn);
   }
 }
 

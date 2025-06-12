@@ -39,8 +39,6 @@ class ExchangeFSModel extends interfaces_1.IExchangeModel {
     }
     findByCurrency(baseCurrency) {
         return __awaiter(this, void 0, void 0, function* () {
-            // quotes are valid for 1 hour
-            // after that must refetch rates and update local data
             return new Promise((resolve, reject) => {
                 const fileName = this._generateFileName(baseCurrency);
                 fs_1.default.readFile(`${constants_1.TEMP_DATA_DIR}/${fileName}.json`, (err, data) => {
@@ -51,7 +49,7 @@ class ExchangeFSModel extends interfaces_1.IExchangeModel {
                         parsedData = data ? JSON.parse(data.toString()) : null;
                     }
                     catch (_err) {
-                        //
+                        // skip error
                     }
                     if (parsedData) {
                         const { date } = parsedData;
@@ -62,28 +60,7 @@ class ExchangeFSModel extends interfaces_1.IExchangeModel {
                     reject('Local quotes are not available');
                 });
             })
-                .then((result) => {
-                // validate if local quotes exists and, if so, if they are still valid
-                const today = new Date();
-                const resultDate = new Date(result.date);
-                const resultDay = resultDate.getDate();
-                const resultMonth = resultDate.getMonth() + 1;
-                const resultYear = resultDate.getFullYear();
-                const day = today.getDate();
-                const month = today.getMonth() + 1;
-                const year = today.getFullYear();
-                // quotes are not from today, return null
-                if (!(resultDay === day && resultMonth === month && resultYear === year)) {
-                    return null;
-                }
-                const resultsHours = resultDate.getHours();
-                const hours = today.getHours();
-                // quotes expired, return null
-                if (resultsHours !== hours)
-                    return null;
-                // quotes are still valid, return'em
-                return result;
-            })
+                .then((result) => result)
                 .catch((_err) => {
                 // console.log(err);
                 return null;

@@ -170,9 +170,8 @@ class Exchange {
                     const key = Object.keys(_exchangeRate)[0];
                     return exchangeRatesCurrencies.indexOf(key) === index;
                 });
-                // console.log({ rates });
                 // console.log(rates);
-                this._exchangeModel.upsert(rates);
+                this._exchangeModel.upsert(rates, this._refreshRatesInterval);
                 yield browser.close();
                 return rates;
             }

@@ -23,7 +23,7 @@ class ExchangeRedisModel extends interfaces_1.IExchangeModel {
         });
         this._client.on('error', (err) => console.log('Redis Client Error', err));
     }
-    create(data) {
+    create(data, expiresIn = '1h') {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const { baseCurrency } = data;
@@ -33,7 +33,21 @@ class ExchangeRedisModel extends interfaces_1.IExchangeModel {
                 now.setHours(now.getHours(), 0, 0, 0);
                 const key = this._generateFileName(baseCurrency);
                 yield this._client.set(key, JSON.stringify(data));
-                const expireAt = (0, moment_1.default)(now).add(1, 'hour').toDate();
+                let parsedExpiresIn = 1;
+                switch (expiresIn) {
+                    case '6h':
+                        parsedExpiresIn = 6;
+                        break;
+                    case '12h':
+                        parsedExpiresIn = 12;
+                        break;
+                    case '24h':
+                        parsedExpiresIn = 24;
+                        break;
+                    default:
+                        break;
+                }
+                const expireAt = (0, moment_1.default)(now).add(parsedExpiresIn, 'hour').toDate();
                 yield this._client.expireAt(key, expireAt);
                 return data;
             }
@@ -69,14 +83,14 @@ class ExchangeRedisModel extends interfaces_1.IExchangeModel {
             }
         });
     }
-    update(data) {
+    update(data, expiresIn = '1h') {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.create(data);
+            return this.create(data, expiresIn);
         });
     }
-    upsert(data) {
+    upsert(data, expiresIn = '1h') {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.create(data);
+            return this.create(data, expiresIn);
         });
     }
 }

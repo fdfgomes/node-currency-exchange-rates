@@ -258,7 +258,7 @@ By default this package uses local JSON files to cache currency rates data.
 
 ### v1.0.7+
 
-In v1.0.7 or newer versions, you can also use Redis to cache data instead of using the default caching strategy.
+You can also use Redis to cache data instead of using the default caching strategy.
 
 > Click <a href="https://github.com/fdfgomes/currency-exchange-rates-api">here</a> to see a complete example of implementation using Redis for data caching.
 
@@ -314,7 +314,7 @@ example();
 
 ### v1.1.0
 
-You can set the currency rates refresh interval. Valid intervals are `6h`, `12h` or `24h`. Default value is `1h`.
+You can set the currency rates refresh interval. Valid intervals are `1h`, `6h`, `12h` and `24h`. Default value is `1h`.
 
 #### Set currency rates refresh interval example:
 
@@ -368,7 +368,7 @@ example();
 ```
 MIT License
 
-Copyright (c) 2023
+Copyright (c) 2025
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
